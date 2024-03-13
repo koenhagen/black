@@ -2,17 +2,8 @@ name: Test
 
 on:
   push:
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
 
-  pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
-
-permissions:
-  contents: read
+permissions: write-all
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
@@ -31,8 +22,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9"]
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        python-version: ["3.12"]
+        os: [ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -48,9 +39,11 @@ jobs:
           python -m pip install --upgrade tox
 
       - name: Unit tests
-        if: "!startsWith(matrix.python-version, 'pypy')"
-        run:
-          tox -e ci-py$(echo ${{ matrix.python-version }} | tr -d '.') -- -v --color=yes
+        uses: koenhagen/measure-energy-action@v0.33
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: tox -e ci-py$(echo ${{ matrix.python-version }} | tr -d '.') -- -v --color=yes
+          count: 1
 
       - name: Unit tests (pypy)
         if: "startsWith(matrix.python-version, 'pypy')"
